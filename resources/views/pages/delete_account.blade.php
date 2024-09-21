@@ -10,7 +10,7 @@
                 <div role="tabpanel">
 
                     <div class="col-sm-12" style="margin: 0 10px;">
-                        <h3 class="page_title">Delete Account</h3>
+                        <h3 class="page_title">Delete User Account</h3>
                     </div>
 
                     <div class="col-sm-12">
