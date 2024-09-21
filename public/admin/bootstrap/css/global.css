@@ -1,0 +1,116 @@
+/* Pop Up START */
+.popup {
+  width:100%;
+  height:100%;
+  display:none;
+  position:absolute;
+  top:0px;
+  left:0px;
+  background:rgba(0,0,0,0.75);
+  z-index: 10000;
+}
+.dataTables_info[aria-live="polite"] {
+  z-index: 1000;
+}
+
+/*.select2-container {
+  z-index: 999999;
+}*/
+
+/* Inner */
+.popup-inner {
+  max-width:700px;
+  width:90%;
+  padding:40px;
+  position:absolute;
+  top:50px;
+  left:50%;
+  -webkit-transform:translate(-50%, -50%);
+  transform:translate(-50%, -50%);
+  box-shadow:0px 2px 6px rgba(0,0,0,1);
+  border-radius:3px;
+  background:#fff;
+}
+
+/* Close Button */
+.popup-close {
+  width:30px;
+  height:30px;
+  padding-top:4px;
+  display:inline-block;
+  position:absolute;
+  top:0px;
+  right:0px;
+  transition:ease 0.25s all;
+  -webkit-transform:translate(50%, -50%);
+  transform:translate(50%, -50%);
+  border-radius:1000px;
+  background:rgba(0,0,0,0.8);
+  font-family:Arial, Sans-Serif;
+  font-size:20px;
+  text-align:center;
+  line-height:100%;
+  color:#fff;
+}
+
+.popup-close:hover {
+  -webkit-transform:translate(50%, -50%) rotate(180deg);
+  transform:translate(50%, -50%) rotate(180deg);
+  background:rgba(0,0,0,1);
+  text-decoration:none;
+}
+/* Pop Up END */
+
+.make_layer {
+  position: relative;
+}
+.make_layer .layer {
+  position: absolute;
+  top: -50px;
+  background: #333;
+  color: #fff;
+  width: 95%;
+  border-radius: 9px;
+  padding: 10px;
+  max-height: 60px;
+  z-index: 1000;
+  opacity: 1;
+}
+
+.form-group .error {
+color: #a94442;
+  font-weight: normal;
+}
+
+.phone_apk {
+  margin-bottom: 10px;
+}
+
+@media (min-width: 768px) {
+
+}
+.wb-close-container {
+  position: absolute; right: 10px; top: 3px;
+}
+.wb-close {
+  padding-top: 8px;
+}
+.panel-primary>.panel-heading {
+  background-color: #3c8dbc;
+}
+
+.modal-body {
+  max-height: calc(100vh - 210px);
+  overflow-y: auto;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice {
+  color: #000;
+}
+
+.tbl-banner-image {
+  width: 300px;
+  padding: 5px;
+  border: 1px solid lightgrey;
+  margin: 5px;
+}
