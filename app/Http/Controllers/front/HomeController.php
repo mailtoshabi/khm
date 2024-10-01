@@ -57,7 +57,7 @@ class HomeController extends Controller
         $offerCatId = Utility::CATEGORY_ID_OFFER;
         $offerProudcts = Product::where('is_active',1)->whereHas('categories', function($query) use($offerCatId) {
             $query->where('categories.id', $offerCatId);
-        })->take(8)->latest()->get();
+        })->take(6)->latest()->get();
 
         foreach($offerProudcts as $offerProudct) {
             $slug_offer = AllSlug::where('causer_id',$offerProudct->id)->where('causer_type', 'App\Models\Product')->first();
@@ -65,10 +65,10 @@ class HomeController extends Controller
             $offerProudct->slug = $slug_ofr;
         }
 
-        $mainCategories = Category::where('is_active',1)->whereNotIn('id', [Utility::CATEGORY_ID_OFFER])->orderBy('order_no','asc')->get();
+        $mainCategories = Category::where('is_active',1)->whereNotIn('id', [Utility::CATEGORY_ID_OFFER])->orderBy('order_no','asc')->take(8)->get();
 
         foreach($mainCategories as $mainCategory) {
-            foreach($mainCategory->products as $allProduct) {
+            foreach($mainCategory->limit_products as $allProduct) {
                 $all_slug = AllSlug::where('causer_id',$allProduct->id)->where('causer_type', 'App\Models\Product')->first();
                 $slug_al = $all_slug->slug;
                 $allProduct->slug = $slug_al;
@@ -77,7 +77,7 @@ class HomeController extends Controller
             $mainCategory->slug = $all_slug_mainCategory->slug;
         }
 
-        $featuredProudcts = Product::where('is_active',1)->where('is_featured',1)->take(8)->latest()->get();
+        $featuredProudcts = Product::where('is_active',1)->where('is_featured',1)->take(6)->latest()->get();
         foreach($featuredProudcts as $featuredProudct) {
             $slug_featured = AllSlug::where('causer_id',$featuredProudct->id)->where('causer_type', 'App\Models\Product')->first();
             $slug = $slug_featured->slug;
@@ -486,7 +486,7 @@ class HomeController extends Controller
     // }
 
     public function get_price (Request $request) {
-        
+
         $product_id = $request->product_id;
         $type_size = $request->type_size;
         $quantity = (int)$request->quantity;
@@ -1539,7 +1539,7 @@ class HomeController extends Controller
                     $offerCatId = Utility::CATEGORY_ID_OFFER;
                     $offerProudcts = Product::where('is_active',1)->whereHas('categories', function($query) use($offerCatId) {
                         $query->where('categories.id', $offerCatId);
-                    })->take(8)->latest()->get();
+                    })->take(6)->latest()->get();
 
                     foreach($offerProudcts as $offerProudct) {
                         $slug_offer = AllSlug::where('causer_id',$offerProudct->id)->where('causer_type', 'App\Models\Product')->first();
@@ -1547,10 +1547,10 @@ class HomeController extends Controller
                         $offerProudct->slug = $slug_ofr;
                     }
 
-                    $mainCategories = Category::where('is_active',1)->whereNotIn('id', [Utility::CATEGORY_ID_OFFER])->orderBy('order_no','asc')->get();
+                    $mainCategories = Category::where('is_active',1)->whereNotIn('id', [Utility::CATEGORY_ID_OFFER])->orderBy('order_no','asc')->take(4)->get();
 
                     foreach($mainCategories as $mainCategory) {
-                        foreach($mainCategory->products as $allProduct) {
+                        foreach($mainCategory->limit_products as $allProduct) {
                             $all_slug = AllSlug::where('causer_id',$allProduct->id)->where('causer_type', 'App\Models\Product')->first();
                             $slug_al = $all_slug->slug;
                             $allProduct->slug = $slug_al;
@@ -1559,7 +1559,7 @@ class HomeController extends Controller
                         $mainCategory->slug = $all_slug_mainCategory->slug;
                     }
 
-                    $featuredProudcts = Product::where('is_active',1)->where('is_featured',1)->take(8)->latest()->get();
+                    $featuredProudcts = Product::where('is_active',1)->where('is_featured',1)->take(4)->latest()->get();
                     foreach($featuredProudcts as $featuredProudct) {
                         $slug_featured = AllSlug::where('causer_id',$featuredProudct->id)->where('causer_type', 'App\Models\Product')->first();
                         $slug = $slug_featured->slug;

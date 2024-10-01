@@ -14,6 +14,11 @@ class Category extends Model
         return $this->belongsToMany('App\Models\Product')->where('is_active',1)->withTimestamps();
     }
 
+    public function limit_products()
+    {
+        return $this->belongsToMany('App\Models\Product')->where('is_active',1)->latest()->take(6)->withTimestamps();
+    }
+
     /*public function childs() {
         return $this->hasMany('App\Models\Category','parent','id')->orderBy('name','asc') ;
     }*/

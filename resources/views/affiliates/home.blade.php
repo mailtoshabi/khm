@@ -147,7 +147,7 @@
 
         <?php $allProdIdLists = []; ?>
         @foreach($mainCategories as $mainCategory)
-            @if(!empty($mainCategory->products))
+            @if(!empty($mainCategory->limit_products))
                 <div class="corousel-container" data-plugin="khm-corousel" id="dvallproduct-corousel" >
                 <div class="row">
                     <div class="col-md-12" >
@@ -167,8 +167,8 @@
 
                                     $allprodNo = 1;
                                     ?>
-                                    @foreach($mainCategory->products as $allProudct)
-                                            @if($allprodNo < 9)
+                                    @foreach($mainCategory->limit_products as $allProudct)
+                                            {{-- @if($allprodNo < 9) --}}
                                                 <div class="item {{ $allprodNo==1 ? 'active' : '' }}">
                                                     <div class="col-md-3 col-lg-3 col-xs-6 col-sm-3 hm_prod_container">
                                                         <center>
@@ -184,7 +184,7 @@
                                                     array_push($allProdIdLists,$allProudct->id);
                                                     $allprodNo++;
                                                 ?>
-                                            @endif
+                                            {{-- @endif --}}
                                     @endforeach
                                 </div>
                                 <a class="left carousel-control" href="#all-corousel-{{ $mainCategory->id }}" data-slide="prev"><i class="glyphicon glyphicon-chevron-left"></i></a>
