@@ -57,7 +57,10 @@
                             @if(!empty(($product->brand())))
                                 <p><a class="brand" href="{{ route('affiliate.all.slug',[$affiliate_slug, $product->brand()->slug]) }}">{{ $product->brand()->name }}</a></p>
                             @endif
-                            <p ><span id="prod_stock"></span> <span id="stock_notify" style="display: none;"><a href="{{ route('contact') }}">Notify us</a></span> &nbsp;<button id="one_click" class="one_click btn " type="button" @if(Auth::guard('customer')->guest()) data-toggle="modal" href="#oneClickModal" @endif style="background: #259B76;"><i class="fa fa-check-circle"></i> Enquire Now</button></p>
+                            <p >
+                                {{-- <span id="prod_stock"></span> <span id="stock_notify" style="display: none;"><a href="{{ route('contact') }}">Notify us</a></span> &nbsp; --}}
+                                <button id="one_click" class="one_click btn " type="button" @if(Auth::guard('customer')->guest()) data-toggle="modal" href="#oneClickModal" @endif style="background: #259B76;">
+                                <i class="fa fa-check-circle"></i> Enquire Now</button></p>
                             @if(!empty($product->brochure))
                                 <a class="product-brochure" href="{{ asset($product->brochure) }}" target="_blank">Download Product Brochure</a>
                             @endif

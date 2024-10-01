@@ -65,26 +65,7 @@ class HomeController extends Controller
             $offerProudct->slug = $slug_ofr;
         }
 
-        $mainCategories = Category::where('is_active',1)->has('parents',0)->whereNotIn('id', [Utility::CATEGORY_ID_OFFER])->orderBy('order_no','asc')->get();
-        foreach($mainCategories as $mainCategory) {
-            $child_product_array=[];
-            $child_product_id_array=[];
-            foreach($mainCategory->childs as $child_category) {
-                $child_products = Category::findOrFail($child_category->id)->products;
-                if(!empty(json_decode($child_products))) {
-                    foreach($child_products as $child_product) {
-                        if(!in_array($child_product->id,$child_product_id_array)) {
-                            array_push($child_product_array,$child_product);
-                            $child_product_id_array[] = $child_product->id;
-                            $child_product->price = $child_product->min_price();
-                            $child_product->min_mrp = $child_product->min_mrp();
-                        }
-                    }
-
-                }
-            }
-            $mainCategory->products = $child_product_array;
-        }
+        $mainCategories = Category::where('is_active',1)->whereNotIn('id', [Utility::CATEGORY_ID_OFFER])->orderBy('order_no','asc')->get();
 
         foreach($mainCategories as $mainCategory) {
             foreach($mainCategory->products as $allProduct) {
@@ -413,47 +394,6 @@ class HomeController extends Controller
             $product->slug = $slug;
         }
 
-        /*$categories = Category::with('products')->has('parents')->where('is_active',1)->where('name', 'like', '%'.$term.'%')->get();
-        foreach($categories as $index2 =>$cat_product) {
-            foreach($cat_product->products as $product) {
-                $allproducts[] = $product;
-            }
-
-        }
-
-        $mainCategories = Category::with('childs')->has('parents',0)->where('is_active',1)->where('name', 'like', '%'.$term.'%')->get();
-        $main_cat_products=[];
-        foreach($mainCategories as $mainCategory) {
-            foreach($mainCategory->childs as $child) {
-                $childCat = Category::with('childs','products')->findOrFail($child->id);
-                $main_cat_products[] = $childCat->products;
-                $child->childs = $childCat->childs;
-                foreach($child->childs as $grandChild) {
-                    $grandChildCat = Category::with('products')->findOrFail($grandChild->id);
-                    $main_cat_products[] = $grandChildCat->products;
-                }
-            }
-
-        }
-
-        foreach($main_cat_products as $index => $main_cat_product) {
-            if(count($main_cat_product)==0 ) {
-                unset($main_cat_products[$index]);
-            }
-            foreach($main_cat_product as $products) {
-                $allproducts[] = $products;
-            }
-        }
-
-        $productIds=[];
-        foreach($allproducts as $key1 => $allproduct) {
-            if(in_array($allproduct->id,$productIds)){
-                unset($allproducts[$key1]);
-            }else {
-                $productIds[] = $allproduct->id;
-            }
-        }*/
-
         return view('pages.search_products',['products' => $allproducts, 'term'=>$term_display, 'selected_cat' => $cat_id]);
     }
 
@@ -546,19 +486,7 @@ class HomeController extends Controller
     // }
 
     public function get_price (Request $request) {
-        /*if($request->has('type_size') && !empty($request->type_size) && $request->has('quantity')  &&  !empty($request->quantity)) {
-            $price = PriceDetail::where('type_size',$request->type_size);
-
-            $price->where(function ($query) use ($request) {
-                $query->where('quantity_from', '<=', $request->quantity);
-            });
-            $price = $price->orderBy('quantity_from','desc')->first(['price']);
-
-            return ['price'=>$price->price];
-        }*/
-
-        /*$type_size = '250 mL';
-        $quantity = 9;*/
+        
         $product_id = $request->product_id;
         $type_size = $request->type_size;
         $quantity = (int)$request->quantity;
@@ -1470,46 +1398,7 @@ class HomeController extends Controller
 
             $allproducts = $allproducts->get();
 
-        /*$categories = Category::with('products')->has('parents')->where('name', 'like', '%'.$term.'%')->get();
-        foreach($categories as $index2 =>$cat_product) {
-            foreach($cat_product->products as $product) {
-                $allproducts[] = $product;
-            }
 
-        }
-
-        $mainCategories = Category::with('childs')->has('parents',0)->where('name', 'like', '%'.$term.'%')->get();
-        $main_cat_products=[];
-        foreach($mainCategories as $mainCategory) {
-            foreach($mainCategory->childs as $child) {
-                $childCat = Category::with('childs','products')->findOrFail($child->id);
-                $main_cat_products[] = $childCat->products;
-                $child->childs = $childCat->childs;
-                foreach($child->childs as $grandChild) {
-                    $grandChildCat = Category::with('products')->findOrFail($grandChild->id);
-                    $main_cat_products[] = $grandChildCat->products;
-                }
-            }
-
-        }
-
-        foreach($main_cat_products as $index => $main_cat_product) {
-            if(count($main_cat_product)==0 ) {
-                unset($main_cat_products[$index]);
-            }
-            foreach($main_cat_product as $products) {
-                $allproducts[] = $products;
-            }
-        }
-
-        $productIds=[];
-        foreach($allproducts as $key1 => $allproduct) {
-            if(in_array($allproduct->id,$productIds)){
-                unset($allproducts[$key1]);
-            }else {
-                $productIds[] = $allproduct->id;
-            }
-        }*/
 
         $htmlData= '';
 
@@ -1643,77 +1532,42 @@ class HomeController extends Controller
                 $affiliate = Affiliate::findOrFail($causer_id);
 
                 if ($affiliate) {
-                    $banners = Banner::where('is_active', 1)->where('is_active_cust', 1)->where(function ($query) use ($affiliate) {
-                        $query->where('user_id', Utility::KHM_USER_ID)->orWhere('user_id', $affiliate->user->id);
+                    $banners = Banner::where('is_active',1)->where(function($query) {
+                        $query->where('user_id',Utility::KHM_USER_ID);
+                    })->orderBy('order_no','asc')->get();
 
-                    })->orderBy('order_no', 'asc')->get();
-                    $offerProducts = $affiliate->offer_products->take(8);
-                    foreach ($offerProducts as $offerProudct) {
-                        $slug_offer = AllSlug::where('causer_id', $offerProudct->id)->where('causer_type', 'App\Models\Product')->first();
+                    $offerCatId = Utility::CATEGORY_ID_OFFER;
+                    $offerProudcts = Product::where('is_active',1)->whereHas('categories', function($query) use($offerCatId) {
+                        $query->where('categories.id', $offerCatId);
+                    })->take(8)->latest()->get();
+
+                    foreach($offerProudcts as $offerProudct) {
+                        $slug_offer = AllSlug::where('causer_id',$offerProudct->id)->where('causer_type', 'App\Models\Product')->first();
                         $slug_ofr = $slug_offer->slug;
                         $offerProudct->slug = $slug_ofr;
                     }
 
-                    $mainCategories = $affiliate->main_categories->where('is_active', 1)->whereNotIn('id', [Utility::CATEGORY_ID_OFFER]);
-                    foreach ($mainCategories as $mainCategory) {
-                        $product_array = [];
-                        $product_id_array = [];
-                        // $child_cat_ids = [];
-                        // foreach ($mainCategory->childs as $child_category) {
-                        //     $child_cat_ids[] = $child_category->id;
-                        // }
-                        $products = Product::where('is_active', 1)
-                        ->whereHas('categories', function ($query) use ($mainCategory) {
-                            $query->where('categories.id', $mainCategory->id);
-                        })
-                        ->join('category_product', 'products.id', '=', 'category_product.product_id')
-                        ->join('affiliate_category', function ($join) use($causer_id) {
-                            $join->on('affiliate_category.category_id', '=', 'category_product.category_id')
-                                ->where('affiliate_category.affiliate_id', $causer_id);
-                        })
-                        ->join('brand_product', 'products.id', '=', 'brand_product.product_id')
-                        ->join('affiliate_brand', function ($join) use($causer_id) {
-                            $join->on('affiliate_brand.brand_id', '=', 'brand_product.brand_id')
-                                ->where('affiliate_brand.affiliate_id', $causer_id);
-                        })
-                        ->join('affiliate_product', function ($join) use ($causer_id) {
-                            $join->on('products.id', '=', 'affiliate_product.product_id')
-                            ->where('affiliate_product.affiliate_id', '=', $causer_id)
-                            ->where('affiliate_product.is_home', '=', 1);
-                        })
-                            ->select('*')
-                            ->get();
+                    $mainCategories = Category::where('is_active',1)->whereNotIn('id', [Utility::CATEGORY_ID_OFFER])->orderBy('order_no','asc')->get();
 
-                        foreach ($products as $product) {
-                            if (!in_array($product->product_id, $product_id_array)) {
-                                array_push($product_array, $product);
-                                $product_id_array[] = $product->product_id;
-                                $all_slug = AllSlug::where('causer_id', $product->product_id)->where('causer_type', 'App\Models\Product')->first();
-                                $slug_al = $all_slug->slug;
-                                $product->slug = $slug_al;
-                                $product->id = $product->product_id;
-                                $product->price = $product->min_price();
-                                $product->min_mrp = $product->min_mrp();
-                            }
+                    foreach($mainCategories as $mainCategory) {
+                        foreach($mainCategory->products as $allProduct) {
+                            $all_slug = AllSlug::where('causer_id',$allProduct->id)->where('causer_type', 'App\Models\Product')->first();
+                            $slug_al = $all_slug->slug;
+                            $allProduct->slug = $slug_al;
                         }
-
-                        $mainCategory->products = $product_array;
-
                         $all_slug_mainCategory = AllSlug::where('causer_id',$mainCategory->id)->where('causer_type', 'App\Models\Category')->first();
                         $mainCategory->slug = $all_slug_mainCategory->slug;
                     }
 
-
-                    /*$featuredProudcts = Product::where('is_active',1)->where('is_featured',1)->take(8)->latest()->get();
+                    $featuredProudcts = Product::where('is_active',1)->where('is_featured',1)->take(8)->latest()->get();
                     foreach($featuredProudcts as $featuredProudct) {
                         $slug_featured = AllSlug::where('causer_id',$featuredProudct->id)->where('causer_type', 'App\Models\Product')->first();
                         $slug = $slug_featured->slug;
                         $featuredProudct->slug = $slug;
-                    }*/
-
+                    }
 
                     $affiliate_sess = $this->getAffiliate($causer_id);
-                    return view('affiliates.home', ['banners' => $banners, 'offerProudcts' => $offerProducts, /*'featuredProudcts'=>$featuredProudcts,*/
+                    return view('affiliates.home', ['banners' => $banners, 'offerProudcts' => $offerProudcts, /*'featuredProudcts'=>$featuredProudcts,*/
                         'mainCategories' => $mainCategories, 'slug' => $page_slug]);
                 }
             } else {

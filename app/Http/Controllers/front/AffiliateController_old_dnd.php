@@ -33,7 +33,6 @@ use App\Http\Controllers\SmsFastMsgController as SmsFastMsgController;
 use App\Http\Controllers\AWLMEAPIController as AWLMEAPI;
 use App\Http\Controllers\ReqMsgDTOController as ReqMsgDTO;
 use App\Http\Controllers\ResMsgDTOController as ResMsgDTO;
-use App\Models\PriceDetail;
 use Laravel\Socialite\Facades\Socialite;
 /*use setasign\Fpdi\Fpdi;*/
 class AffiliateController extends Controller
@@ -134,14 +133,31 @@ class AffiliateController extends Controller
 
             $mainCategory = Category::findOrFail($causer_id);
 
-                $child_count = $mainCategory->childs->count();
-                    $products = Product::where('is_active', 1)->whereHas('categories', function ($query) use ($causer_id) {
-                        $query->whereIn('categories.id', [$causer_id]);
-                    })->latest()->paginate(24);
+            $products = Product::where('is_active', 1)
+                ->whereHas('categories', function ($query) use ($mainCategory) {
+                    $query->where('categories.id', $mainCategory->id);
+                })
+                ->join('category_product', 'products.id', '=', 'category_product.product_id')
+                ->join('affiliate_category', function ($join) use($affiliate_id) {
+                    $join->on('affiliate_category.category_id', '=', 'category_product.category_id')
+                        ->where('affiliate_category.affiliate_id', $affiliate_id);
+                })
+                ->join('brand_product', 'products.id', '=', 'brand_product.product_id')
+                ->join('affiliate_brand', function ($join) use($affiliate_id) {
+                    $join->on('affiliate_brand.brand_id', '=', 'brand_product.brand_id')
+                        ->where('affiliate_brand.affiliate_id', $affiliate_id);
+                })
+                ->join('affiliate_product', function ($join) use ($affiliate_id) {
+                    $join->on('products.id', '=', 'affiliate_product.product_id')
+                    ->where('affiliate_product.affiliate_id', '=', $affiliate_id);
+                })
+                    ->select('products.*')
+                    ->paginate(24);
 
                     foreach ($products as $product) {
                         $all_slug = AllSlug::where('causer_id', $product->id)->where('causer_type', 'App\Models\Product')->first();
-                        $product->slug = $all_slug->slug;
+                        $slug_al = $all_slug->slug;
+                        $product->slug = $slug_al;
                     }
 
             return view('affiliates.products', ['category' => $mainCategory, 'products' => $products]);
@@ -287,7 +303,8 @@ class AffiliateController extends Controller
         $affiliate_id = $affiliate_slug->causer_id;
         $affiliate_sess = $this->getAffiliate($affiliate_id, $request);
 
-        $categories = Category::where('is_active',1)->whereNotIn('id', [11])->orderBy('id','desc')->get();
+        $affiliate = Affiliate::findOrFail($affiliate_id);
+        $categories = $affiliate->main_categories->where('is_active',1)->whereNotIn('id', [Utility::CATEGORY_ID_OFFER]);
         foreach($categories as $category) {
             // foreach($category->childs as $child) {
             //     $all_slug_child = AllSlug::where('causer_id',$child->id)->where('causer_type', 'App\Models\Category')->first();
@@ -343,23 +360,52 @@ class AffiliateController extends Controller
 
         $term = $request->has('term')?$request->term:'';
         $term_display = $request->has('term')?$request->term:'';
-        $allproducts = Product::where('name', 'like', '%'.$term.'%')->where('is_active',1);
+        /*$allproducts = Product::where('name', 'like', '%'.$term.'%')->where('is_active',1)->get();*/
+
+
+        $products = Product::
+        join('affiliate_product', function ($join) use($affiliate_id) {
+            $join->on('affiliate_product.product_id', '=','products.id')
+                ->where('affiliate_product.affiliate_id', '=', $affiliate_id);
+        });
 
         if ($request->has('cat_id')&&!empty($cat_id)) {
-            $allproducts->whereHas('categories', function ($query) use ($request) {
-                $query->where('categories.id', $request->cat_id);
+            $products->join('category_product', function ($join) use ($request) {
+                $join->on('category_product.product_id','=','products.id')
+                ->where('category_product.category_id', '=', $request->cat_id);
+
             });
         }
 
+        if(!empty($term)) {
+           $products->where('name', 'like', '%'.$term.'%');
+        }
 
-            $allproducts = $allproducts->get();
+        if ($request->has('cat_id')&&!empty($cat_id)) {
+            // $products->join('category_product', function ($join) use ($request) {
+            //     $join->on('category_product.product_id','=','products.id')
+            //     ->where('category_product.category_id', '=', $request->cat_id);
+
+            // });
+
+            // ->join('affiliate_category', function ($join) {
+            //     $join->on('affiliate_category.category_id', '=', 'categories.id')
+            //         ->where('affiliate_category.affiliate_id', session('kerala_h_m_affiliate'));
+            // });
+
+            // $products->whereHas('categories', function ($query) use ($request) {
+            //     $query->where('categories.id', $request->cat_id);
+            // });
+        }
+
+        $products = $products->get();
 
 
 
         $htmlData= '';
 
         $produCount = 1;
-        foreach($allproducts as $allproduct) {
+        foreach($products as $allproduct) {
             if($produCount <=10) {
                 if ($allproduct->image != '') {
                     $image_thumb = asset(Utility::DEFAULT_STORAGE . Product::FILE_DIRECTORY .  '/' . $allproduct->image);
@@ -367,12 +413,13 @@ class AffiliateController extends Controller
                     $image_thumb = asset('images/no-image.jpg');
                 }
 
-                $all_slug = AllSlug::where('causer_id',$allproduct->id)->where('causer_type', 'App\Models\Product')->first();
-                $slug = $all_slug->slug;
-                $allproduct->slug = $slug;
+                $all_slug = AllSlug::where('causer_id',$allproduct->product_id)->where('causer_type', 'App\Models\Product')->first();
+                $product_slug = $all_slug->slug;
+                $allproduct->slug = $product_slug;
+                $allproduct->id = $allproduct->product_id;
 
                 $htmlData .= '<div class="display_box" align="left">
-                    <a href="' . route('all.slug', [$slug]) . '">
+                    <a href="' . route('affiliate.all.slug', [$slug, $product_slug]) . '">
                         <img src="' . $image_thumb . '" />
                         <span class="name">' . $allproduct->name . '</span><br/>
                     </a>
@@ -406,26 +453,30 @@ class AffiliateController extends Controller
         $term = $request->has('term')?$request->term:'';
         $term_display = $request->has('term')?$request->term:'';
 
-        $allproducts = Product::where('is_active',1);
-        if ($request->has('term')) {
-            $allproducts->where('name', 'like', '%'.$term.'%');
+        $products = Product::
+            join('affiliate_product', function ($join) use($affiliate_id) {
+                $join->on('products.id', '=', 'affiliate_product.product_id')
+                    ->where('affiliate_product.affiliate_id', '=', $affiliate_id);
+            });
+        if(!empty($term)) {
+            $products = $products->where('name', 'like', '%'.$term.'%');
         }
-
-        if ($request->has('cat_id')&&!empty($cat_id)) {
-            $allproducts->whereHas('categories', function ($query) use ($request) {
+        if ($request->has('cat_id')) {
+            $products->whereHas('categories', function ($query) use ($request) {
                 $query->where('categories.id', $request->cat_id);
             });
         }
 
-        $allproducts = $allproducts->get();
+        $products = $products->get();
 
-        foreach($allproducts as $product) {
-            $all_slug = AllSlug::where('causer_id',$product->id)->where('causer_type', 'App\Models\Product')->first();
+        foreach($products as $product) {
+            $all_slug = AllSlug::where('causer_id',$product->product_id)->where('causer_type', 'App\Models\Product')->first();
             $slug = $all_slug->slug;
             $product->slug = $slug;
+            $product->id = $product->product_id;
         }
 
-        return view('affiliates.search_products',['products' => $allproducts, 'term'=>$term_display, 'selected_cat' => $cat_id, 'selected_subcat' => $subcat_id]);
+        return view('affiliates.search_products',['products' => $products, 'term'=>$term_display, 'selected_cat' => $cat_id, 'selected_subcat' => $subcat_id]);
     }
 
     public  function featured_products ($slug, Request $request) {
@@ -507,8 +558,23 @@ class AffiliateController extends Controller
         $category = Category::findOrFail($id);
 
         $products = Product::where('is_active',1)->whereHas('categories', function($query) use($id) {
-            $query->whereIn('categories.id', [$id]);
-        })->latest()->paginate(24);
+            $query->where('categories.id', $id);
+        })
+        ->join('category_product', 'products.id', '=', 'category_product.product_id')
+        ->join('affiliate_category', function ($join) use($affiliate_id) {
+            $join->on('affiliate_category.category_id', '=', 'category_product.category_id')
+                ->where('affiliate_category.affiliate_id', $affiliate_id);
+        })
+        ->join('brand_product', 'products.id', '=', 'brand_product.product_id')
+        ->join('affiliate_brand', function ($join) use($affiliate_id) {
+            $join->on('affiliate_brand.brand_id', '=', 'brand_product.brand_id')
+                ->where('affiliate_brand.affiliate_id', $affiliate_id);
+        })
+        ->join('affiliate_product', function ($join) use ($affiliate_id) {
+            $join->on('products.id', '=', 'affiliate_product.product_id')
+            ->where('affiliate_product.affiliate_id', '=', $affiliate_id);
+        })
+        ->latest()->paginate(24);
 
         foreach($products as $product) {
             $all_slug = AllSlug::where('causer_id',$product->id)->where('causer_type', 'App\Models\Product')->first();
@@ -525,11 +591,13 @@ class AffiliateController extends Controller
 
         $affiliate = Affiliate::find($affiliate_id);
 
+        $products = $affiliate->offer_products;
+
         $category = Category::findOrFail($id);
 
-        $products = Product::where('is_active',1)->whereHas('categories', function($query) use($id) {
+        /*$products = Product::where('is_active',1)->whereHas('categories', function($query) use($id) {
             $query->whereIn('categories.id', [$id]);
-        })->latest()->paginate(24);
+        })->latest()->paginate(24);*/
 
         foreach($products as $product) {
             $all_slug = AllSlug::where('causer_id',$product->id)->where('causer_type', 'App\Models\Product')->first();
@@ -542,7 +610,10 @@ class AffiliateController extends Controller
         $affiliate_slug = AllSlug::where('slug',$slug)->first();
         $affiliate_id = $affiliate_slug->causer_id;
         $affiliate_sess = $this->getAffiliate($affiliate_id, $request);
-        $brands = Brand::where('is_active',1)->get();
+
+        $affiliate = Affiliate::find($affiliate_id);
+        /*$brands = Brand::all();*/
+        $brands = $affiliate->brands;
         foreach($brands as $brand) {
             $all_slug = AllSlug::where('causer_id',$brand->id)->where('causer_type', 'App\Models\Brand')->first();
             $brand->slug = $all_slug->slug;
@@ -632,8 +703,14 @@ class AffiliateController extends Controller
         $type_size = $request->type_size;
         $quantity = (int)$request->quantity;
 
+        $product = Product::find($product_id);
+
+        $max_price = $product->productTypePrice($type_size)['max'];
+
         $type = TypeProductPivot::where('type_id',$type_size)->where('product_id',$product_id)->first();
         $type_id = $type->id;
+
+        $affiliate_product_type = DB::table('affiliate_product_type')->where(['affiliate_id' => $affiliate_id, 'product_id' => $product_id, 'type_id' => $type_size])->first();
 
         if(\Cart::isEmpty()) {
             $total_quantity_added = $quantity;
@@ -656,65 +733,54 @@ class AffiliateController extends Controller
         }else {
             $type->stock_status = 1;
         }
-        $price = PriceDetail::where('tp_pivot_id',$type_id);
-        $price = $price->where(function ($query) use ($quantity) {
+
+        /*$price_khm = PriceDetail::where('tp_pivot_id',$type_id);
+        $price_khm = $price_khm->where(function ($query) use ($quantity) {
             $query->where('quantity_from', '<=', $quantity);
         });
-        $price = $price->orderBy('quantity_from','desc')->first(['price']);
-        if(!empty($type->mrp) && ($type->mrp != $price->price) && ($type->mrp!=0)) {
-            $discount = (($type->mrp-$price->price)/$type->mrp)*100;
+        $price_khm = $price_khm->orderBy('quantity_from','desc')->first(['price']);*/
+
+        /*$prices = PriceDetail::where('tp_pivot_id',$type_id)->get();*/
+
+        $prices = $type->prices;
+
+        /*$price = $prices->min()->price;*/
+        /*if(empty($affiliate_product_type->profit)) {
+            $price = Utility::getAffiliatePrice($product_id,$type_size)['khm'];
+        }else {
+            $price = Utility::getAffiliatePrice($product_id,$type_size)['cost'] + (Utility::getAffiliatePrice($product_id,$type_size)['cost'] * ($affiliate_product_type->profit/100));
+        }*/
+
+
+        if(!empty($affiliate_product_type->profit)) {
+            $profit_type = $affiliate_product_type->profit_type;
+            $basic_cost = Utility::getAffiliatePrice($product_id,$type_size)['cost'];
+            if($profit_type == Utility::PROFIT_TYPE_PERCENTAGE) {
+                $price =  round($basic_cost + ($basic_cost * ($affiliate_product_type->profit/100)),2);
+            }else if($profit_type == Utility::PROFIT_TYPE_MARGIN) {
+                $price =  round($basic_cost + $affiliate_product_type->profit,2);
+            }else {
+                $price =  round($affiliate_product_type->profit,2);
+            }
+
+        }else {
+            $price =  round(Utility::getAffiliatePrice($product_id,$type_size)['khm'],2);
+        }
+
+
+        if(empty($type->mrp) || ($type->mrp == 0)) {
+            $type->mrp = $max_price;
+        }
+
+        if(!empty($max_price) && ($max_price != $price) && ($max_price!=0)) {
+            $discount = (($type->mrp-$price)/$type->mrp)*100;
             $type->discount = round($discount,0);
         }else {
             $type->discount = 0;
             $type->mrp = 0;
         }
 
-
-        $prices = PriceDetail::where('tp_pivot_id',$type_id)->get();
-        $allPrices = '';
-        $allPrices .= '<b style="margin:0px; padding-bottom: 5px;">QUANTITY DISCOUNT</b> <br>' .
-            '<table class="table table-bordered">
-                            <tr>
-                                <th>
-                                Qty
-                                </th>
-                                <th>
-                                Rate/Each
-                                </th>
-                            </tr>';
-        foreach($prices as $single_price) {
-            if(!empty($single_price->quantity_to)) {
-                /*$allPrices[] = 'Buy Qty ' . $single_price->quantity_from . '-' . $single_price->quantity_to . ' @ ' . '<i class="fa fa-inr"></i>' . $single_price->price . '<br>';*/
-                if($single_price->quantity_from==$single_price->quantity_to) {
-                    $allPrices .= '<tr><td>' .
-                        $single_price->quantity_from .
-                        '</td>
-                                <td>
-                                <i class="fa fa-inr"></i>' . $single_price->price .
-                        '</td></tr>';
-                }else {
-                    $allPrices .= '<tr><td>' .
-                        $single_price->quantity_from . '-' . $single_price->quantity_to .
-                        '</td>
-                                <td>
-                                <i class="fa fa-inr"></i>' . $single_price->price .
-                        '</td></tr>';
-                }
-            }else {
-                /*$allPrices[] = 'Buy Qty above ' . $single_price->quantity_from . ' @ ' . '<i class="fa fa-inr"></i>' . $single_price->price . '<br>';*/
-                $allPrices .= '<tr><td>' .
-                    $single_price->quantity_from . '+' .
-                    '</td>
-                                <td>
-                                <i class="fa fa-inr"></i>' . $single_price->price .
-                    '</td></tr>';
-            }
-        }
-
-        $allPrices .= '</table>';
-
-
-        return ['price'=>$price->price, 'quantity' => $quantity, 'type' => $type, 'prices'=>$allPrices];
+        return ['price' => $price, 'quantity' => $quantity, 'type' => $type];
 
     }
 
@@ -762,7 +828,7 @@ class AffiliateController extends Controller
             $type->stock_status = 1;
         }
 
-        $actual_price = $this->actual_price ($request->id,$request->type,$quantity, $slug);
+        $actual_price = $this->actual_price ($request->id,$request->type, $slug);
         if($type->stock_status ==1) {
             \Cart::add(array(
                 'id' => (int)$request->id,
@@ -825,7 +891,7 @@ class AffiliateController extends Controller
         else return 0;
     }
 
-    public function actual_price ($product_id,$type_size,$quantity, $slug) {
+    public function actual_price ($product_id,$type_size, $slug) {
 
         $affiliate_slug = AllSlug::where('slug',$slug)->first();
         $affiliate_id = $affiliate_slug->causer_id;
@@ -833,32 +899,25 @@ class AffiliateController extends Controller
         $type = TypeProductPivot::where('type_id',$type_size)->where('product_id',$product_id)->first();
         $type_id = $type->id;
 
-        $price = PriceDetail::where('tp_pivot_id',$type_id);
-        $price->where(function ($query) use ($quantity) {
-            $query->where('quantity_from', '<=', $quantity);
-        });
-        $price = $price->orderBy('quantity_from','desc')->first(['price']);
-        return $price->price;
+        $affiliate_product_type = DB::table('affiliate_product_type')->where(['affiliate_id' => $affiliate_id, 'product_id' => $product_id, 'type_id' => $type_size])->first();
 
-        // $affiliate_product_type = DB::table('affiliate_product_type')->where(['affiliate_id' => $affiliate_id, 'product_id' => $product_id, 'type_id' => $type_size])->first();
+        if(empty($affiliate_product_type->profit)) {
+            $price = Utility::getAffiliatePrice($product_id,$type_size)['khm'];
+        }else {
 
-        // if(empty($affiliate_product_type->profit)) {
-        //     $price = Utility::getAffiliatePrice($product_id,$type_size)['khm'];
-        // }else {
+            $profit_type = $affiliate_product_type->profit_type;
+            $basic_cost = Utility::getAffiliatePrice($product_id,$type_size)['cost'];
+            if($profit_type == Utility::PROFIT_TYPE_PERCENTAGE) {
+                $price =  round($basic_cost + ($basic_cost * ($affiliate_product_type->profit/100)),2);
+            }else if($profit_type == Utility::PROFIT_TYPE_MARGIN) {
+                $price =  round($basic_cost + $affiliate_product_type->profit,2);
+            }else {
+                $price =  round($affiliate_product_type->profit,2);
+            }
+            /*$price = Utility::getAffiliatePrice($product_id,$type_size)['cost'] + (Utility::getAffiliatePrice($product_id,$type_size)['cost'] * $affiliate_product_type->profit);*/
+        }
 
-        //     $profit_type = $affiliate_product_type->profit_type;
-        //     $basic_cost = Utility::getAffiliatePrice($product_id,$type_size)['cost'];
-        //     if($profit_type == Utility::PROFIT_TYPE_PERCENTAGE) {
-        //         $price =  round($basic_cost + ($basic_cost * ($affiliate_product_type->profit/100)),2);
-        //     }else if($profit_type == Utility::PROFIT_TYPE_MARGIN) {
-        //         $price =  round($basic_cost + $affiliate_product_type->profit,2);
-        //     }else {
-        //         $price =  round($affiliate_product_type->profit,2);
-        //     }
-        //     /*$price = Utility::getAffiliatePrice($product_id,$type_size)['cost'] + (Utility::getAffiliatePrice($product_id,$type_size)['cost'] * $affiliate_product_type->profit);*/
-        // }
-
-        // return $price;
+        return $price;
     }
 
     public function checkout_login($slug, Request $request) {
@@ -1061,23 +1120,19 @@ class AffiliateController extends Controller
         $redirectUrl = route('affiliate.checkout.payment.success',$slug);
 
         //SEND SMS START
-        // $smsApiUser = Setting::where('term', 'smsapi_user')->value('value');
-        // $smsApiPass = Setting::where('term', 'smsapi_password')->value('value');
-        // $smsApiSender = Setting::where('term', 'smsapi_sender')->value('value');
-        // $smsText = config('app.name') . ': Your order ' . $sale->order_no . ' amounting to Rs. ' . $amount . ' placed. We will send you an update when the order is shipped.';
-        // $mblno = Setting::IND_CODE . $sale->customer->phone;
+        $smsApiUser = Setting::where('term', 'smsapi_user')->value('value');
+        $smsApiPass = Setting::where('term', 'smsapi_password')->value('value');
+        $smsApiSender = Setting::where('term', 'smsapi_sender')->value('value');
+        $smsText = config('app.name') . ': Your order ' . $sale->order_no . ' amounting to Rs. ' . $amount . ' placed. We will send you an update when the order is shipped.';
+        $mblno = Setting::IND_CODE . $sale->customer->phone;
         //SEND SMS END
 
         if($request->payment_option == Utility::PAYMENT_ONLINE) {
-            $marchantId = Utility::marchantId;
-            $consumerId = encrypt($customer_id);
-            $salt = Utility::FEDSALT;
             /*$sendPayment = new InstaMojoController($amount,$purpose,$phone,$email,$name,$redirectUrl);
             $createRequest = $sendPayment->createRequest();
             $success_route = route('affiliate.payment.online',[$slug, 'request_url' => $createRequest]);
             return response()->json($success_route);*/
-            // return $this->meTrnPay($order_id,$amount_paisa,$customer_details->name,$mblno);
-            return $this->fedPayProcess($marchantId,$order_id,$amount,$consumerId,$name,$phone, $email,$salt);
+            return $this->meTrnPay($order_id,$amount_paisa,$customer_details->name,$mblno);
         }else {
             $clear = \Cart::clear();
             $request->session()->forget('kerala_h_m_ship_option');
@@ -1085,186 +1140,16 @@ class AffiliateController extends Controller
 
             if(!empty($sale->customer->phone)) {
                 //$sendSMS = $this->sendsms(Setting::SERVER_IP, Setting::USER_PREFIX . $smsApiUser, $smsApiPass, $smsApiSender, $smsText, $mblno, '0', '1');
-                // $sendSMS = $this->sendsms($sale->customer->phone, $smsText);
+                $sendSMS = $this->sendsms($sale->customer->phone, $smsText);
             }
 
             //return response()->json($success_route);
             // return redirect()->route($success_route);
-            $message = "Payment Pending - your order is confirmed!";
             $customerDetails = CustomerDetail::with('customer')->where('customer_id',$customer_id)->first();
             return view('affiliates.pay_success',['sale' => $sale, 'customerDetails' => $customerDetails, 'is_paid' => 0]);
 
         }
 
-    }
-
-    public function fedPayProcess($marchantId,$order_id,$amount,$consumerId,$name,$phone,$email,$salt)
-    {
-       $path = storage_path() . "/json/worldline_AdminData.json";
-       $mer_array = json_decode(file_get_contents($path), true);
-
-       $datastring = $marchantId . "|" . $order_id . "|" . $amount . "|" . "|" . $consumerId . "|" . $phone . "|" . $email . "||||||||||" . $salt;
-
-        $hashVal = hash('sha512', $datastring);
-        $paymentDetails = array(
-            'marchantId' => $marchantId,
-            'txnId' => $order_id,
-            'amount' => $amount,
-            'currencycode' => Utility::CURRENCY_CODE,
-            'schemecode' => Utility::schemecode,
-            'consumerId' => $consumerId,
-            'mobileNumber' => $phone,
-            'email' => $email,
-            'customerName' => $name,
-            'accNo' => '',
-            'accountName' => '',
-            'aadharNumber' => '',
-            'ifscCode' => '',
-            'accountType' => '',
-            'debitStartDate' => '',
-            'debitEndDate' => '',
-            'maxAmount' => '',
-            'amountType' => '',
-            'frequency' => '',
-            'cardNumber' => '',
-            'expMonth' => '',
-            'expYear' => '',
-            'cvvCode' => '',
-            'hash' => $hashVal
-        );
-        return view('payment.checkoutpage', ['payval' => $paymentDetails],compact('mer_array'));
-    }
-
-    public function fedPaycheckout(Request $request)
-    {
-        $response = $request->msg;
-        $res_msg = explode("|",$_POST['msg']);
-
-        $path = storage_path() . "/json/worldline_AdminData.json";
-        $mer_array = json_decode(file_get_contents($path), true);
-        date_default_timezone_set('Asia/Calcutta');
-         $strCurDate = date('d-m-Y');
-
-
-        $arr_req = array(
-            "merchant" => ["identifier" => $mer_array['merchantCode'] ],
-            "transaction" => [ "deviceIdentifier" => "S","currency" => $mer_array['currency'],"dateTime" => $strCurDate,
-            "token" => $res_msg[5],"requestType" => "S"]
-        );
-
-        $finalJsonReq = json_encode($arr_req);
-
-        function callAPI($method, $url, $finalJsonReq)
-        {
-           $curl = curl_init();
-           switch ($method)
-           {
-              case "POST":
-                 curl_setopt($curl, CURLOPT_POST, 1);
-                 if ($finalJsonReq)
-                    curl_setopt($curl, CURLOPT_POSTFIELDS, $finalJsonReq);
-                 break;
-              case "PUT":
-                 curl_setopt($curl, CURLOPT_CUSTOMREQUEST, "PUT");
-                 if ($finalJsonReq)
-                    curl_setopt($curl, CURLOPT_POSTFIELDS, $finalJsonReq);
-                 break;
-              default:
-                 if ($finalJsonReq)
-                    $url = sprintf("%s?%s", $url, http_build_query($finalJsonReq));
-           }
-           // OPTIONS:
-           curl_setopt($curl, CURLOPT_URL, $url);
-           curl_setopt($curl, CURLOPT_HTTPHEADER, array(
-              'Content-Type: application/json',
-           ));
-           curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-           curl_setopt($curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
-           curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, FALSE);
-           curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
-           // EXECUTE:
-           $result = curl_exec($curl);
-
-           if(!$result){die("Connection Failure !! Try after some time.");}
-           curl_close($curl);
-           return $result;
-        }
-
-        $method = 'POST';
-        $url = "https://www.paynimo.com/api/paynimoV2.req";
-        $res_result = callAPI($method, $url, $finalJsonReq);
-        $dualVerifyData = json_decode($res_result, true);
-
-        // return view('responsepage',compact('response','res_msg','dualVerifyData'));
-        $order_no = $res_msg[3];
-
-        $sale = Sale::where('order_no',$order_no)->latest()->first();
-        $customerID = encrypt($sale->customer->id);
-        $saleID = encrypt($sale->id);
-        $amount = $sale->sub_total + $sale->delivery_charge;
-        $mblno = $sale->customer->phone;
-        if($sale) {
-            $sale->fed_txn_status = $res_msg[0];
-            $sale->fed_txn_message = $res_msg[1];
-            $sale->fed_txn_error_message = $res_msg[2];
-            $sale->fed_tpsl_txn_id = $res_msg[5];
-            $sale->fed_transaction_identifier = $dualVerifyData['merchantTransactionIdentifier'];
-            $sale->fed_worldline_identifier = $dualVerifyData['paymentMethod']['paymentTransaction']['identifier'];
-            $sale->fed_amount = $dualVerifyData['paymentMethod']['paymentTransaction']['amount'];
-            $sale->fed_error_message = $dualVerifyData['paymentMethod']['paymentTransaction']['errorMessage'];
-            $sale->fed_status_message = $dualVerifyData['paymentMethod']['paymentTransaction']['statusMessage'];
-            $sale->fed_status_code = $dualVerifyData['paymentMethod']['paymentTransaction']['statusCode'];
-            $sale->fed_date_time = !empty($dualVerifyData['paymentMethod']['paymentTransaction']['dateTime']) ? Carbon::parse($dualVerifyData['paymentMethod']['paymentTransaction']['dateTime'])->format('Y-m-d H:i:s'):null;
-            if($dualVerifyData['paymentMethod']['paymentTransaction']['statusCode'] == '0300') {
-                $sale->is_paid = 1;
-                $sale->pay_method = Utility::PAYMENT_ONLINE;
-            }else {
-                $sale->is_paid = 0;
-            }
-            $sale->save();
-        }
-
-        $clear = \Cart::clear();
-        $request->session()->forget('kerala_h_m_ship_option');
-        //SEND SMS START
-        // $smsApiUser = Setting::where('term', 'smsapi_user')->value('value');
-        // $smsApiPass = Setting::where('term', 'smsapi_password')->value('value');
-        // $smsApiSender = Setting::where('term', 'smsapi_sender')->value('value');
-        // $smsText = config('app.name') . ': Your order ' . $order_no . ' amounting to Rs. ' . $amount . ' placed. We will send you an update when the order is shipped.';
-        //SEND SMS END
-        // $sendSMS = $this->sendsms($mblno, $smsText);
-
-        //  $customer_id = Auth::guard('customer')->user()->id;
-
-        //  if($customer_id) {
-
-            // $customerDetails = CustomerDetail::with('customer')->where('customer_id',$customer_id)->first();
-            // return view('pages.pay_success',['sale' => $sale, 'customerDetails' => $customerID]);
-            //TODO: redirect the route instead of showing view page.
-            if($sale->is_paid==1) {
-                return redirect()->route('fed_payment_success',['sale' => $saleID, 'customer' => $customerID]);
-            }
-            else {
-                return redirect()->route('fed_payment_fail',['sale' => $saleID, 'customer' => $customerID]);
-            }
-
-        //  }else {
-        //     return redirect()->route('index');
-        //  }
-    }
-
-    public function fed_payment_success($saleID,$customerID) {
-        $sale = Sale::find(decrypt($saleID));
-        $customer = Customer::find(decrypt($customerID));
-        $message = "Payment Success - your order is confirmed!";
-        return view('pages.pay_success',['sale' => $sale, 'customerDetails' => $customer->customer_detail, 'message'=>$message]);
-    }
-
-    public function fed_payment_fail($saleID,$customerID) {
-        $sale = Sale::find(decrypt($saleID));
-        $customer = Customer::find(decrypt($customerID));
-        $message = "Payment Failed - your order is on pending";
-        return view('pages.pay_success',['sale' => $sale, 'customerDetails' => $customer->customer_detail, 'message'=>$message]);
     }
 
     /*public function payment_success($slug, Request $request) {

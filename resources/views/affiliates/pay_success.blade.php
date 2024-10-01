@@ -18,7 +18,7 @@
                             <center>
                                 @if($sale->pay_method == Utility::PAYMENT_ONLINE)
                                 @if($sale->is_paid)
-                                        <h3 class="text-success">Success - your order is confirmed!</h3>
+                                        <h3 class="text-success">{{ $message }}</h3>
                                     @else
                                         <h3 class="text-danger">Failed - your order is on pending as we have not received your payment. Please contact us if you have any queries.</h3>
                                     @endif
@@ -26,19 +26,28 @@
                                 @endif
 
                                 @if($sale->pay_method == Utility::PAYMENT_OFFLINE)
-                                <h3 class="text-success">Success - your order is confirmed!</h3>
+                                <h3 class="text-success">{{ $message }}</h3>
                                 <h5>Order number: #{{ $sale->order_no }}</h5>
 
                                     <p class="text-success"><strong>Transfer INR {{ $sale->sub_total + $sale->delivery_charge }} by using either of the following methods and Update your UTR Number in <a target="_blank" href="{{ route('myorders') }}">my order</a> page</strong></p>
-                                    @if(!empty($affiliate->bank_account))
+                                    {{-- @if(!empty($affiliate->bank_account))
                                         <p> >> To Bank account shown below.</p>
                                         <div style="padding-left: 20px;color: #11549a; font-weight: bold;">
                                             {!! $affiliate->bank_account !!}
                                         </div>
                                         <br>
-                                    @endif
+                                    @endif --}}
 
-                                    @if(!empty($affiliate->upi_id))
+                                    <p><strong>
+                                        Account Name : {{ Utility::settings('account_name') }}<br>
+                                        Account Number : {{ Utility::settings('account_number') }}<br>
+                                        Payee bank : {{ Utility::settings('bank_name') }}<br>
+                                        IFSC Code : {{ Utility::settings('ifsc_code') }} <br>
+                                        Branch : {{ Utility::settings('bank_branch') }}</strong><br>
+                                    </strong></p>
+                                    <br>
+
+                                    {{-- @if(!empty($affiliate->upi_id))
                                         <p> >> To UPI ID shown below.</p>
                                         <div style="padding-left: 20px;color: #11549a; font-weight: bold;">
                                             {{ $affiliate->upi_id }}
@@ -52,7 +61,18 @@
                                             {{ $affiliate->g_pay }}
                                         </div>
                                         <br>
-                                    @endif
+                                    @endif --}}
+
+                                    <p> >> To UPI ID shown below.</p>
+                                    <div style="padding-left: 20px; color: darkblue; font-weight: bold;">
+                                        {{ Utility::settings('upi_id') }}
+                                    </div>
+                                    <br>
+                                    <p> >> To Google Pay Account shown below.</p>
+                                    <div style="padding-left: 20px; color: darkblue; font-weight: bold;">
+                                        {{ Utility::settings('google_pay') }}
+                                    </div>
+                                    <br>
                                     <label class="utr_no_div">
                                         <input type="text" name="utr_no" id="utr_no" value="{{ $sale->utr_no }}" placeholder="Enter UTR No." style="width: 100%;" >
                                         <input type="hidden" name="sale_id" id="sale_id" value="{{ $sale->id }}" >
@@ -110,6 +130,30 @@
                                                 <tr>
                                                     <td width="50%" class="text-left">
                                                         <strong>Sold by:</strong><br>
+                                                        <h4>Kerala healthmart Pvt Ltd</h4>
+                                                        {{-- <h5><b>Surgicals Chemicals & Diagnostics Distributor</b></h5> --}}
+                                                        <h5>60/5690, Popular building</h5>
+                                                        <h5>Mooriyad road, PUTHIYA PALAM. Calicut Dt, Kerala - 673002</h5>
+                                                        <h5>GST No : 32AAICK6482F1ZH</h5>
+                                                    </td>
+                                                    <td width="50%" class="text-left">
+                                                        <strong>Delivery Address:</strong><br>
+                                                        {{ $customerDetails->name }}<br>
+                                                        {!! !empty($customerDetails->customer->email) ? 'Email: '. $customerDetails->customer->email . '<br>' : '' !!}
+                                                        {!! !empty($customerDetails->customer->phone) ? 'Mob: '. $customerDetails->customer->phone . '<br>' : '' !!}
+                                                        {!! !empty($sale->address) ? $sale->address['address'] . '<br>' : '' !!}
+                                                        {{ !empty($sale->address) ? $sale->address['place'].', ' : '' }} {{ !empty($sale->address) ? $sale->address['city'].', ' : '' }} {{ !empty($sale->address) ? $sale->address['pincode'].', ' : '' }}<br>
+                                                        {{ !empty($sale->address) ? Utility::district_name($sale->address['district']) .', ' : '' }} {{ !empty($sale->address) ? Utility::state_name($sale->address['state']) .', ' : '' }} India.
+                                                        {!! !empty($customerDetails->gstin) ? '<br>GSTIN : ' . $customerDetails->gstin : '' !!}
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                        {{-- <table class="table table-hover table-bordered">
+                                            <tbody>
+                                                <tr>
+                                                    <td width="50%" class="text-left">
+                                                        <strong>Sold by:</strong><br>
                                                         <h3>{{ $affiliate->user->name }}</h3>
                                                         <h5><b>{{ $affiliate->location }}</b></h5>
                                                         <h5>{{ $affiliate->city }}</h5>
@@ -129,7 +173,7 @@
                                                     </td>
                                                 </tr>
                                             </tbody>
-                                        </table>
+                                        </table> --}}
                                         <table width="100%" class="table table-hover">
                                             <thead>
                                             <tr>
