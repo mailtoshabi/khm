@@ -324,7 +324,7 @@ class AffiliateController extends Controller
         }*/
         $this->destroy_image($affiliate->image['thumb']);
         $this->destroy_image($affiliate->image['original']);
-        /*$affiliate->delete();*/
+        // $affiliate->delete();
         $user->delete();
 
         return response()->json(['success' => 'Affiliate has been deleted successfully']);

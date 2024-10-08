@@ -10,6 +10,28 @@
 
             <h3 class="" style="font-weight: bold;">Online Brand stores</h3> {{--sub_page_pt--}}
 
+
+
+            <div class="row"> {{--row--}}
+                <div role="tabpanel">
+                    <div class=" destacados">
+                        <div class="" id="tab1">
+                            @foreach($brands as $brand)
+                                <div class=" col-md-3 col-lg-2 col-xs-6 col-sm-4" style="background: #fff; margin-bottom: 5px; border-right: 1px solid lightgrey; min-height: 225px;">
+                                    <a href="@if(!empty($brand->slug)) {{ route('all.slug',$brand->slug) }} @else # @endif " class="product_item" title="{{ $brand->name }}" style="padding: 5px;">
+                                        <img src="{{ empty($brand->image) ? asset('images/no-image.jpg') : asset(Utility::DEFAULT_STORAGE . App\Models\Brand::FILE_DIRECTORY .  '/' . $brand->image) }}" class="img-responsive" alt="{{ $brand->name }}">
+                                        <p class="product_name text-center" style="padding-top: 5px;">
+                                            {{ \Illuminate\Support\Str::limit($brand->name, $limit = 70, $end = '...') }}
+                                        </p>
+                                    </a>
+                                </div>
+                            @endforeach
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
             <div class="row">
                 <div class="col-sm-12 contact-form" style="margin-top:5px;" id="dvdealer-form">
                     <div id="form-message" class="text-success" style="display: none;">Request has been sent Successfully. We will contact you soon.</div>
@@ -41,27 +63,6 @@
                     <h4>You can get a demo Online Healthcare Brand store with 14 days free trial. Don't wait, apply now itself. <a href="https://bit.ly/34qsMk4">CLICK HERE TO APPLY</a></h4>
                 </div>
             </div>
-
-            <div class="row"> {{--row--}}
-                <div role="tabpanel">
-                    <div class=" destacados">
-                        <div class="" id="tab1">
-                            @foreach($brands as $brand)
-                                <div class=" col-md-3 col-lg-2 col-xs-6 col-sm-4" style="background: #fff; margin-bottom: 5px; border-right: 1px solid lightgrey; min-height: 225px;">
-                                    <a href="@if(!empty($brand->slug)) {{ route('all.slug',$brand->slug) }} @else # @endif " class="product_item" title="{{ $brand->name }}" style="padding: 5px;">
-                                        <img src="{{ empty($brand->image) ? asset('images/no-image.jpg') : asset(Utility::DEFAULT_STORAGE . App\Models\Brand::FILE_DIRECTORY .  '/' . $brand->image) }}" class="img-responsive" alt="{{ $brand->name }}">
-                                        <p class="product_name text-center" style="padding-top: 5px;">
-                                            {{ \Illuminate\Support\Str::limit($brand->name, $limit = 70, $end = '...') }}
-                                        </p>
-                                    </a>
-                                </div>
-                            @endforeach
-                        </div>
-
-                    </div>
-                </div>
-            </div>
-
 
 
 

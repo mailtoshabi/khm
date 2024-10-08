@@ -78,7 +78,7 @@
                             <div class="row">
                             <div class="col-lg-4 col-md-4 col-sm-4 col-xs-2" style="padding-right: 0;">
                                 <select class="khm-navbar-input mobile_search left" name="cat_id" id="cat_id" style="border-bottom: 2px solid #A6A5A5; border-radius: 3px 0 0 0;" > {{-- onChange="getsubCategory(this.value);" --}}
-                                    <option value="">All</option>
+                                    <option value="" class="big">All</option>
                                     <?php $no=1; ?>
                                     @foreach($categories as $index => $category)
                                         <option value="{{ $index }}" {{ (isset($selected_cat)) && ($selected_cat==$index) ? 'selected' : '' }}>{{ $no }} {{ $category }}</option>

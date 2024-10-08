@@ -65,7 +65,7 @@ class HomeController extends Controller
             $offerProudct->slug = $slug_ofr;
         }
 
-        $mainCategories = Category::where('is_active',1)->whereNotIn('id', [Utility::CATEGORY_ID_OFFER])->orderBy('order_no','asc')->take(8)->get();
+        $mainCategories = Category::where('is_active',1)->whereNotIn('id', [Utility::CATEGORY_ID_OFFER])->orderBy('order_no','asc')->take(4)->get();
 
         foreach($mainCategories as $mainCategory) {
             foreach($mainCategory->limit_products as $allProduct) {

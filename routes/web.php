@@ -278,7 +278,7 @@ Route::prefix('administrator')->group(function () {
                 Route::get('/{id}/edit', [SliderController::class,'edit'])->name('edit');
                 Route::get('/{id}/edit_modal', [SliderController::class,'edit_modal'])->name('edit_modal');
                 Route::put('/{id}/update', [SliderController::class,'update'])->name('update');
-                Route::delete('/{id}/delete', [SliderController::class,'delete'])->name('delete');
+                Route::delete('/{id}/delete', [SliderController::class,'destroy'])->name('delete');
                 Route::get('/{id}/change_status', [SliderController::class,'change_status'])->name('change_status');
             });
 
@@ -289,7 +289,7 @@ Route::prefix('administrator')->group(function () {
                 Route::post('/add', [AffiliateController::class,'store'])->name('store');
                 Route::get('/{id}/edit', [AffiliateController::class,'edit'])->name('edit');
                 Route::put('/{id}/update', [AffiliateController::class,'update'])->name('update');
-                Route::delete('/{id}/delete', [AffiliateController::class,'delete'])->name('delete');
+                Route::delete('/{id}/delete', [AffiliateController::class,'destroy'])->name('delete');
                 Route::get('/{id}/change_status', [AffiliateController::class,'change_status'])->name('change_status');
             });
 

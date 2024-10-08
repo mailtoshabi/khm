@@ -16,7 +16,7 @@ class Category extends Model
 
     public function limit_products()
     {
-        return $this->belongsToMany('App\Models\Product')->where('is_active',1)->latest()->take(6)->withTimestamps();
+        return $this->belongsToMany('App\Models\Product')->where('is_active',1)->latest()->take(4)->withTimestamps();
     }
 
     /*public function childs() {

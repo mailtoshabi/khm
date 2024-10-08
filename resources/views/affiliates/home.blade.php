@@ -48,12 +48,12 @@
                     {{-- <div class="col-md-4 col-xs-6" >
                         <p class="upload_prescrip" style="background: #0499D0;"><a data-toggle="modal" href="#myPrescriptionModal"><i class="fa fa-upload"></i> Upload Prescription</a></p>
                     </div> --}}
-                    <div class="col-md-6 col-xs-12" >
+                    <div class="col-md-12 col-xs-12" >
                         <p class="upload_prescrip" style="background: #1AD13F;"><a href="@if(!empty($affiliate->contact_whatsapp)) https://api.whatsapp.com/send?phone=91{{ str_replace(' ','',$affiliate->contact_whatsapp) }} @endif" target="_blank"><i class="fa fa-whatsapp"></i> Order On Whatsapp</a></p>
                     </div>
-                    <div class="col-md-6 col-xs-12" >
+                    {{-- <div class="col-md-6 col-xs-12" >
                         <p class="upload_prescrip" style="background: darkmagenta;"><a data-toggle="modal" href="#myPaymentModal"><i class="fa fa-inr"></i> Transfer Payment</a></p>
-                    </div>
+                    </div> --}}
                 </div>
             </div>
         </div>

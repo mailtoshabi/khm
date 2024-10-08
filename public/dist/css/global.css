@@ -1803,6 +1803,7 @@ a.social-icon, a.social-icon:visited {
     top: 141px;*/
     margin-bottom: 10px;
   }
+
 }
 
 @media screen and (max-width: 767px) {
@@ -1824,6 +1825,10 @@ a.social-icon, a.social-icon:visited {
   .price_fix {
 
   }
+
+  select.khm-navbar-input option.big {
+    font-size: 10px;
+}
 
 }
 

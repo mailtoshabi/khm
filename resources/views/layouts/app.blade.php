@@ -39,8 +39,9 @@
     <link href="{{ asset('dist/css/jquerysctipttop.css') }}" rel="stylesheet" type="text/css">
 
     <!--Fonts-->
-    <link href="{{ asset('fonts/font-awesome/font-awesome.min.css') }}" rel="stylesheet">
-    <link href="{{ asset('fonts/glyphicons/glyphicons.min.css') }}" rel="stylesheet">
+    {{-- <link href="{{ asset('fonts/font-awesome/font-awesome.min.css') }}" rel="stylesheet"> --}}
+    <link href="https://keralahealthmart.com/fonts/font-awesome/font-awesome.min.css" rel="stylesheet">
+    <link href="https://keralahealthmart.com/fonts/glyphicons/glyphicons.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('dist/css/bootstrap-select.css') }}">
     <link rel="stylesheet" href="{{ asset('vendor/ladda-bootstrap/ladda.min.css?v2.2.0') }}">
